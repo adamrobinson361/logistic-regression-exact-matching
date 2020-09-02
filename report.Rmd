@@ -1,0 +1,420 @@
+---
+title: "Binomial Testing, Logistic Regression and Exact Matching"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(MatchIt)
+library(dplyr)
+library(broom)
+library(gtools)
+library(dplyr)
+library(knitr)
+library(Hmisc) # for Hmisc::binconf
+```
+
+## Scope
+
+The scope of this rmarkdown is to take an example dataset with multiple explanatory variables and a 1/0 outcome variable and work through logistic regression and matching approaches to estimate the controlled for association of a particular explanatory variable on the outcome.
+
+The reason for doing this is two fold:
+
+1. To have clear R code that can be utilised and built upon in wider analysis.
+2. To compare the outputs of the different approaches. Do we get different answers with each? approach
+
+## Useful articles/ posts
+
+The following articles and posts were utilised to support this article:
+
+- binomial testing and confidence intervals in R - https://stackoverflow.com/questions/21719578/confidence-interval-for-binomial-data-in-r.
+- Logistic regression and tidy outputs in R - https://cran.r-project.org/web/packages/broom/vignettes/broom.html
+- Exact matching in R (MatchIt user guide) - https://cran.r-project.org/web/packages/MatchIt/vignettes/matchit.pdf
+- Propensity score matching - https://sejdemyr.github.io/r-tutorials/statistics/tutorial8.html
+
+## Introduction to the data
+
+The data used in this example is the **lalonde** dataset that is packaged with the MatchIt R package. This is data from the *National Supported Work Demonstration and PSI, as analysed by Dehejia and Wahba (1999)*.
+
+For the purposes of our examples we will be converting the existing continuous outcome variable to 1/0 and looking to understand the controlled for associations for a specific variable.
+
+You can find more about the data by installing the MatchIt package and running `?MatchIt::lalonde` in R. This comes with a table description and column descriptions.
+ 
+### Load in non matched data 
+
+First we load in the data as follows. **Note:** the data is within the package hence loading via this route rather than say `read_csv`.
+
+```{r, warning = FALSE}
+# Load in lalonde example data from package 
+data("lalonde", package = "MatchIt")
+```
+
+### Head of the non matched data
+
+We then take a look at the head of the data to get a feel for what the data looks like.
+
+```{r, warning = FALSE}
+# Take a look at the head of the data
+head(lalonde, 20)
+```
+### Initial Cleaning + Continuous outcome variable
+
+For the purposes of our example we will subset the data to be the following columns:
+
+- age - age in years
+- black - indicator for African American(1=African-American, 0=not)
+- hispan - indicator for Hispanic (1=Hispanic, 0=not)
+- married - indication for married (1=married, 0=not)
+- degree - indicator whether the individual has a high school degree (1=no degree, 0=degree)
+- re78 - income in 1974
+
+We will perform an intitial clean on the ethnicity columns by making them into one column where you can either be black, hispanic or white. White will be assigned as the baseline group in the factor.
+
+We will also convert degree to degree such that 1 indicates having a high schooldegree and 0 not having a high school degree.
+
+We do this as follows:
+
+```{r, warning= FALSE}
+lalonde <- lalonde %>%
+  select(age, black, hispan, married, nodegree, re78) %>%
+  mutate(
+    eth = case_when(
+    black == 1 ~ "Black",
+    hispan == 1 ~ "Hispanic",
+    TRUE ~ "White"
+    ),
+    degree = ifelse(nodegree == 0,1,0),
+    eth = factor(eth, levels = c("White", "Black", "Hispanic"))
+  ) %>%
+    select(-black, -hispan, -nodegree)
+```
+
+We will then create our 1/0 outcome variable. We will replace re78 with a variable that represents if the income is over 10,000 dollars which will be our outcome variable that we are interested in associations with.
+
+The 10,000 dollar cut off was informed by the following quantiles. Its around the 75th percentile:
+
+```{r, warning=FALSE}
+quantile(lalonde$re78)
+```
+
+We create the new column and drop the old as follows:
+
+```{r, warning=FALSE}
+lalonde <- lalonde %>%
+  mutate(over_10k = ifelse(re78 > 10000, 1,0)) %>%
+  select(-re78)
+
+head(lalonde)
+```
+### What are we interested in
+
+For the purposes of this document **we are interested in the controlled for association of having a degree** on having an income of over 10000. 
+
+We will first analyse the descriptive difference and test for significant differences without controlling for other variables using confidence intervals, proportion tests and single logistic regression.
+
+We will then conduct a Multiple logistic regression to control for other factors and analyse the changes in associations.
+
+We will then utilise exact matching on the covariates and run the same methods on the matched dataset.
+
+We will compare results.
+
+## Non Matched Data analysis
+
+### Percentage over 10k by degree + binomial confidence intervals on non matched data
+
+Calculating the percentage of those that earn over 10k by degree shows that approximately 36% of those with a degree earn over 10k compred to 21% without a degree.
+
+The binomial confidence intervals for each percentage do not overlap indicating this difference is statistically significant at the 95% confidence level.
+
+```{r, warning = FALSE}
+# Look at the percent over 10k by degree
+non_matched_summary <- lalonde %>%
+  group_by(degree) %>%
+  summarise(
+    n = n(), 
+    n_over_10k = sum(over_10k, na.rm = TRUE)
+  ) %>%
+  ungroup() %>%
+  # Looks like Hmisc::binconf needs to be applied rowwise in dplyr. If not you get same result each line.
+  rowwise() %>%
+  mutate(
+    perc_over_10k = Hmisc::binconf(n_over_10k, n)[1],
+    perc_over_10k_ci_low = Hmisc::binconf(n_over_10k, n)[2],
+    perc_over_10k_ci_up = Hmisc::binconf(n_over_10k, n)[3]
+    ) %>%
+  ungroup()
+
+non_matched_summary
+
+```
+### Prop test for difference in percentage over 10k by degree on non matched data
+
+This is also confirmed by a prop test between the percentages that shows that the difference is significant with a p-value of 0.0001107.
+
+```{r, warning = FALSE}
+# This article suggests potentially other better/ more exact tests. Not 100% sure.
+# https://stats.stackexchange.com/questions/123609/exact-two-sample-proportions-binomial-test-in-r-and-some-strange-p-values
+
+n_no_degree_non_matched <- non_matched_summary %>% filter(degree==0) %>% pull(n)
+n_over_10k_no_degree_non_matched <- non_matched_summary %>% filter(degree==0) %>% pull(n_over_10k)
+n_degree_non_matched <- non_matched_summary %>% filter(degree==1) %>% pull(n)
+n_over_10k_degree_non_matched <- non_matched_summary %>% filter(degree==1) %>% pull(n_over_10k)
+
+prop.test(
+  c(
+    n_over_10k_no_degree_non_matched,
+    n_over_10k_degree_non_matched
+  ),
+  c(n_no_degree_non_matched, n_degree_non_matched)
+)
+
+```
+
+### Single logistic regression on non matched data
+
+A single logistic regression with degree as the explanatory and over_10k as the outcome comes to the same result.
+
+In odds terms the association between degree and over_10k is 2.0712921.
+
+The fitted values for the single regression match the descriptive percentages as expected.
+
+#### Regression specification
+
+```{r, warning = FALSE}
+single_logistic_regression_model_all_data <-
+  glm(over_10k ~ degree,
+      family = binomial(link = 'logit'),
+      data = lalonde)
+
+summary(single_logistic_regression_model_all_data)
+```
+
+#### Outputs
+
+##### Estimates
+
+```{r, warning = FALSE}
+# Use broom tidy to extract estimates in tabular form
+broom::tidy(single_logistic_regression_model_all_data) %>%
+  mutate(
+    # Use gtools stars.pval to conver pvalue back to a symbol
+    sig.symbol = gtools::stars.pval(p.value),
+    # Convert log ods to odds ratio
+    odds.ratio = exp(estimate)
+  )
+```
+##### Fitted values
+
+```{r, warning = FALSE}
+# View fitted values in tabular form
+broom::augment(single_logistic_regression_model_all_data, type.predict = "response")
+
+```
+##### Statistics
+
+```{r, warning = FALSE}
+#Summary stats in tabular form
+broom::glance(single_logistic_regression_model_all_data) 
+```
+
+### Multiple logistic regression on non matched data
+
+A multiple logistic regression with degree and the other covariates as explanatory variables and over_10k as the outcome shows a similar story for degree.
+
+In odds terms the association between degree and over_10k is now 1.9632983 compared to 2.0712921. Statistical significance remains.
+
+#### Regression specification
+
+```{r, warning = FALSE}
+multiple_logistic_regression_model_all_data <-
+  glm(over_10k ~ age + eth + married + degree,
+      family = binomial(link = 'logit'),
+      data = lalonde)
+
+summary(multiple_logistic_regression_model_all_data)
+```
+
+#### Outputs
+
+##### Estimates
+
+```{r, warning = FALSE}
+# Use broom tidy to extract estimates in tabular form
+broom::tidy(multiple_logistic_regression_model_all_data) %>%
+  mutate(
+    # Use gtools stars.pval to conver pvalue back to a symbol
+    sig.symbol = gtools::stars.pval(p.value),
+    # Convert log ods to odds ratio
+    odds.ratio = exp(estimate)
+  )
+```
+
+##### Fitted values
+
+```{r, warning = FALSE}
+# View fitted values in tabular form
+broom::augment(multiple_logistic_regression_model_all_data, type.predict = "response")
+
+```
+
+##### Statistics
+
+```{r, warning = FALSE}
+#Summary stats in tabular form
+broom::glance(multiple_logistic_regression_model_all_data) 
+```
+
+## Exact Matching/ Matched data anlaysis
+
+This section utilises exact matching as a method to control for covariates. We do the following:
+
+1. Exact match on defined covariates - this will throw away data it cant match (if it exists) which is reported.
+2. Same methods as above on matched data.
+
+### Matching
+
+We use the MatchIt package to conduct exact matching. Online research suggests this is the core package for creating matched datasets. 
+
+Although we are using exact matching here it is possible to do PSM too.
+
+The following runs the match on the defined covariates and outcome and extracts the matched dataset.
+
+```{r, warning = FALSE}
+# Run exact match using matchit
+exact_match_model <- MatchIt::matchit(over_10k ~ age + eth + married, data = lalonde, method = "exact")
+
+# Summary of match
+summary(exact_match_model)
+
+# Extract matched data
+matched_data <- MatchIt::match.data(exact_match_model)
+```
+
+### Percentage over 10k by degree + binomial confidence intervals on matched data
+
+```{r, warning = FALSE}
+matched_summary <- matched_data %>%
+  group_by(degree) %>%
+  summarise(
+    n = n(), 
+    n_over_10k = sum(over_10k, na.rm = TRUE)
+  ) %>%
+  ungroup() %>%
+  # Looks like Hmisc::binconf needs to be applied rowwise in dplyr. If not you get same result each line.
+  rowwise() %>%
+  mutate(
+    perc_over_10k = Hmisc::binconf(n_over_10k, n)[1],
+    perc_over_10k_ci_low = Hmisc::binconf(n_over_10k, n)[2],
+    perc_over_10k_ci_up = Hmisc::binconf(n_over_10k, n)[3]
+    ) %>%
+  ungroup()
+
+matched_summary
+```
+
+### Prop test for difference in percentage over 10k by degree on matched data
+
+```{r, warning = FALSE}
+# This article suggests potentially other better/ more exact tests. Not 100% sure.
+# https://stats.stackexchange.com/questions/123609/exact-two-sample-proportions-binomial-test-in-r-and-some-strange-p-values
+
+n_no_degree_matched <- matched_summary %>% filter(degree==1) %>% pull(n)
+n_over_10k_no_degree_matched <- matched_summary %>% filter(degree==1) %>% pull(n_over_10k)
+n_degree_matched <- matched_summary %>% filter(degree==0) %>% pull(n)
+n_over_10k_degree_matched <- matched_summary %>% filter(degree==0) %>% pull(n_over_10k)
+
+prop.test(
+  c(
+    n_over_10k_no_degree_matched,
+    n_over_10k_degree_matched
+  ),
+  c(n_no_degree_matched, n_degree_matched)
+)
+```
+
+### Single logistic regression on matched data
+
+#### Regression specification
+
+```{r, warning = FALSE}
+single_logistic_regression_model_matched_data <-
+  glm(over_10k ~ degree,
+      family = binomial(link = 'logit'),
+      data = matched_data)
+
+summary(single_logistic_regression_model_matched_data)
+```
+
+#### Outputs
+
+##### Estimates
+
+```{r, warning = FALSE}
+# Use broom tidy to extract estimates in tabular form
+broom::tidy(single_logistic_regression_model_matched_data) %>%
+  mutate(
+    # Use gtools stars.pval to conver pvalue back to a symbol
+    sig.symbol = gtools::stars.pval(p.value),
+    # Convert log ods to odds ratio
+    odds.ratio = exp(estimate)
+  )
+```
+
+##### Fitted values
+
+```{r, warning = FALSE}
+# View fitted values in tabular form
+broom::augment(single_logistic_regression_model_matched_data, type.predict = "response")
+
+```
+##### Statistics
+
+```{r, warning = FALSE}
+#Summary stats in tabular form
+broom::glance(single_logistic_regression_model_matched_data) 
+```
+
+### Multiple logistic regression on matched data 
+
+#### Regression specification
+
+```{r, warning = FALSE}
+multiple_logistic_regression_model_matched_data <-
+  glm(over_10k ~ age + eth + married + degree,
+      family = binomial(link = 'logit'),
+      data = matched_data)
+
+summary(multiple_logistic_regression_model_matched_data)
+```
+
+#### Outputs
+
+##### Estimates
+
+```{r, warning = FALSE}
+# Use broom tidy to extract estimates in tabular form
+broom::tidy(multiple_logistic_regression_model_matched_data) %>%
+  mutate(
+    # Use gtools stars.pval to conver pvalue back to a symbol
+    sig.symbol = gtools::stars.pval(p.value),
+    # Convert log ods to odds ratio
+    odds.ratio = exp(estimate)
+  )
+```
+##### Fitted values
+
+```{r, warning = FALSE}
+# View fitted values in tabular form
+broom::augment(multiple_logistic_regression_model_matched_data, type.predict = "response")
+
+```
+
+##### Statistics
+
+```{r, warning = FALSE}
+#Summary stats in tabular form
+broom::glance(multiple_logistic_regression_model_matched_data) 
+```
