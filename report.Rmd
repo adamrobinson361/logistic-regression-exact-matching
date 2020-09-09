@@ -60,7 +60,7 @@ We then take a look at the head of the data to get a feel for what the data look
 # Take a look at the head of the data
 head(lalonde, 20)
 ```
-### Initial Cleaning + Continuous outcome variable
+### Initial Cleaning + 1/0 outcome
 
 For the purposes of our example we will subset the data to be the following columns:
 
