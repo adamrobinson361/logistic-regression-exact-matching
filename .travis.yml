@@ -13,7 +13,7 @@ cache:
   - $HOME/.local/share/renv
   - $TRAVIS_BUILD_DIR/renv/library
 
-install:
+powershell:
   - C:/Program Files/R/R-3.6.2/bin/Rscript.exe -e "renv::restore()"
   
 before_script:
