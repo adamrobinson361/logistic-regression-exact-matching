@@ -12,14 +12,12 @@ cache:
   directories:
   - $HOME/.local/share/renv
   - $TRAVIS_BUILD_DIR/renv/library
-
-script:
-  - Powershell Rscript.exe -e "renv::restore()"
   
 before_script:
   - chmod +x ./_build.sh
   - chmod +x ./_deploy.sh
 
 script:
+  - Powershell Rscript.exe -e "renv::restore()"
   - ./_build.sh
   - ./_deploy.sh 
