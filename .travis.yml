@@ -14,7 +14,7 @@ cache:
   - $TRAVIS_BUILD_DIR/renv/library
 
 install:
-  - Rscript -e "renv::restore()"
+  - C:/Program Files/R/R-3.6.2/bin/Rscript.exe -e "renv::restore()"
   
 before_script:
   - chmod +x ./_build.sh
