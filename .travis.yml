@@ -1,5 +1,7 @@
 os: windows
 
+language: shell
+
 install: choco install r --version=3.6.2
 
 branches:
