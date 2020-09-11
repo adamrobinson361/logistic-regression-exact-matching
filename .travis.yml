@@ -1,10 +1,6 @@
 os: windows
 
-language: r
-r: 
-  - 3.6.2
-  
-sudo: required
+install: choco install r --version=3.6.2
 
 branches:
   only:
