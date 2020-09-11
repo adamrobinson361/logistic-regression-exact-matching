@@ -14,4 +14,4 @@ cache:
   - $TRAVIS_BUILD_DIR/renv/library
 
 script:
-  - Powershell Rscript.exe -e 'renv::restore()'
+  - Powershell Rscript.exe -e "renv::restore()"
