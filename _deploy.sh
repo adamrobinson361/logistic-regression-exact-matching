@@ -33,4 +33,4 @@ touch book-output/.nojekyll
 cd book-output
 git add . -f
 git commit -m "Automatic build update" || true
-git push origin gh-pages
+git push -f origin gh-pages
