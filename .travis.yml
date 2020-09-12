@@ -22,11 +22,12 @@ install:
  
 script:
  - Rscript -e 'renv::upgrade(); renv::restore(); source("run.R")'
-
+ 
 deploy:
-  provider: pages
+  provider: pages:git
   skip_cleanup: true
   github_token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
   keep_history: true
+  edge: true # opt in to dpl v2
   on:
     branch: master
