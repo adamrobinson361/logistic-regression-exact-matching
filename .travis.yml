@@ -20,5 +20,4 @@ install:
  - Rscript -e 'renv::consent(); renv::equip()'
 script:
  - Rscript -e 'renv::restore(); source("run.R")'
- - sh ./_build.sh
  - sh ./_deploy.sh 
