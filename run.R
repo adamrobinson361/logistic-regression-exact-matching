@@ -1,1 +1,1 @@
-rmarkdown::render("report.Rmd", output_file = "index.html")
+rmarkdown::render("report.Rmd", output_folder = "Outputs")
