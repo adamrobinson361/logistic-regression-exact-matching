@@ -21,7 +21,7 @@ git clone -b gh-pages \
 # Copy locally built *.html files into 
 
 cp -r Outputs/* book-output
-mv book-output/report.html book-output/index.html
+mv book-output/Outputs/report.html book-output/index.html
 
 # Create .nojekyll file to prevent git from trying to build
 # html pages with jekyll.
