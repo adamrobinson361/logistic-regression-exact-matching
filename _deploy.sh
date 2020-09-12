@@ -2,8 +2,8 @@
 
 # Configure your name and email if you have not done so
 
-git config --global user.email ${EMAIL}
-git config --global user.name ${USERNAME}
+git config --global user.email "travis-ci@travis-ci.org"
+git config --global user.name "travis-ci"
 
 # Ensure that the book will only be updated when the build is 
 # triggered from the master branch.
