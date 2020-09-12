@@ -34,4 +34,4 @@ cd book-output
 git add . -f || true
 git commit -m "Automatic build update" || true
 git remote set-url origin https://github.com/${TRAVIS_REPO_SLUG}.git || true
-git push -f origin || true
+#git push -f origin || true
