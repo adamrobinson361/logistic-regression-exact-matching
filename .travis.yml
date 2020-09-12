@@ -22,12 +22,12 @@ install:
  
 script:
  - Rscript -e 'renv::upgrade(); renv::restore(); source("run.R")'
+ - bash - e 'mv Outputs/report.html index.html'
 
 deploy:
-  provider: pages:git
+  provider: pages
   skip_cleanup: true
+  github_token: $GITHUB_TOKEN  # Set in the settings page of your repository, as a secure variable
+  keep_history: true
   on:
     branch: master
-  local_dir: out
-  deploy_key: $GITHUB_PAT
-  edge: true # opt in to dpl v2
