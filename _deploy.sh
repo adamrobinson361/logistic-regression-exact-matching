@@ -19,9 +19,7 @@ git clone -b gh-pages \
   book-output
 
 # Copy locally built *.html files into 
-ls
 cp -r Outputs/* book-output
-
 mv book-output/report.html book-output/index.html
 
 
@@ -33,8 +31,6 @@ touch book-output/.nojekyll
 # Add the locally built files to a commit and push
 
 cd book-output
-
-ls
-#git add . -f
-#git commit -m "Automatic build update" || true
-#git push -f origin gh-pages
+git add . -f || true
+git commit -m "Automatic build update" || true
+git push -f origin gh-pages || true
