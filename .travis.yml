@@ -22,7 +22,6 @@ install:
  
 script:
  - Rscript -e 'renv::upgrade(); renv::restore(); source("run.R")'
- - bash - e 'mv Outputs/report.html index.html'
 
 deploy:
   provider: pages
