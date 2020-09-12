@@ -31,7 +31,7 @@ touch book-output/.nojekyll
 # Add the locally built files to a commit and push
 
 cd book-output
-ls
+git checkout gh-pages
 git add . -f || true
 git commit -m "Automatic build update" || true
-#git push -f origin gh-pages || true
+git push -f
