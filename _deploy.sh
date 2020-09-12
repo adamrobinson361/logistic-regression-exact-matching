@@ -34,4 +34,4 @@ cd book-output
 ls
 git add . -f || true
 git commit -m "Automatic build update" || true
-git push -f origin gh-pages || true
+#git push -f origin gh-pages || true
