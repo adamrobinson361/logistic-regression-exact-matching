@@ -23,9 +23,4 @@ install:
 script:
  - Rscript -e 'renv::upgrade(); renv::restore(); source("run.R")'
 
-after_script:
-  deploy:
-    - provider: script
-      script: ./deploy.sh
-      on:
-        branch: master
+after_script: ./deploy.sh
