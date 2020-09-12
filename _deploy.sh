@@ -33,5 +33,6 @@ touch book-output/.nojekyll
 cd book-output
 git add . -f || true
 git commit -m "Automatic build update" || true
-git remote set-url origin https://github.com/${TRAVIS_REPO_SLUG}.git || true
+git remote set-url origin https://${GITHUB_PAT}@github.com/${TRAVIS_REPO_SLUG}.git || true
+git push --quiet --set-upstream origin gh-pages
 #git push -f origin || true
