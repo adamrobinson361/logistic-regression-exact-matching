@@ -418,3 +418,9 @@ broom::augment(multiple_logistic_regression_model_matched_data, type.predict = "
 #Summary stats in tabular form
 broom::glance(multiple_logistic_regression_model_matched_data) 
 ```
+
+## Session Info
+
+```{r, warning = FALSE}
+sessionInfo()
+```
