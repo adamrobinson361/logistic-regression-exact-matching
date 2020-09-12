@@ -23,5 +23,11 @@ install:
 script:
  - Rscript -e 'renv::upgrade(); renv::restore(); source("run.R")'
 
-after_script:
- - bash ./deploy.sh
+deploy:
+  provider: pages:git
+  skip_cleanup: true
+  on:
+    branch: master
+  local_dir: out
+  deploy_key: $GITHUB_PAT
+  edge: true # opt in to dpl v2
