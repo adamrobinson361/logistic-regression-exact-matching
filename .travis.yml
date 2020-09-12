@@ -19,11 +19,13 @@ install:
  - echo 'options(repos = c(CRAN = "https://cloud.r-project.org"))' > .Rprofile
  - Rscript -e 'install.packages("renv", type= "binary")'
  - Rscript -e 'renv::consent(); renv::equip()'
+ 
 script:
  - Rscript -e 'renv::upgrade(); renv::restore(); source("run.R")'
 
-deploy:
-  - provider: script
-    script: ./deploy.sh
-    on:
-      branch: master
+after_script:
+  deploy:
+    - provider: script
+      script: ./deploy.sh
+      on:
+        branch: master
