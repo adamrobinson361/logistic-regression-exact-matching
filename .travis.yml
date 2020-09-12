@@ -4,6 +4,7 @@ language: bash
 cache:
     directories:
     - $HOME/AppData/Local/Temp/chocolatey
+    - $HOME/AppData/Local/renv
 
 install:
  - choco install -y r --version 3.6.2
@@ -16,6 +17,6 @@ install:
  - export R_LIBS_USER=${HOME}/Documents/R/win-library/3.6
  - echo 'options(repos = c(CRAN = "https://cloud.r-project.org"))' > .Rprofile
  - Rscript -e 'install.packages("renv", type= "binary")'
- - Rscript -e 'renv::equip()'
+ - Rscript -e 'renv::consent(); renv::equip()'
 script:
  - Rscript -e 'renv::restore(); source("run.R")'
