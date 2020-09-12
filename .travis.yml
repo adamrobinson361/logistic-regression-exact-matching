@@ -21,4 +21,9 @@ install:
  - Rscript -e 'renv::consent(); renv::equip()'
 script:
  - Rscript -e 'renv::upgrade(); renv::restore(); source("run.R")'
- - bash ./_deploy.sh 
+
+deploy:
+  - provider: script
+    script: ./deploy.sh
+    on:
+      branch: master
