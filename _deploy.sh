@@ -22,14 +22,19 @@ git clone -b gh-pages \
 ls
 cp -r Outputs/* book-output
 
+mv book-output/report.html book-output/index.html
+
+
 # Create .nojekyll file to prevent git from trying to build
 # html pages with jekyll.
 
-#touch book-output/.nojekyll
+touch book-output/.nojekyll
 
 # Add the locally built files to a commit and push
 
-#cd book-output
+cd book-output
+
+ls
 #git add . -f
 #git commit -m "Automatic build update" || true
 #git push -f origin gh-pages
