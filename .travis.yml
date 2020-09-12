@@ -22,4 +22,4 @@ install:
  
 script:
  - Rscript -e 'renv::upgrade(); renv::restore(); source("run.R")'
- - bash .\_deploy.sh
+ - ./_deploy.sh 
