@@ -5,6 +5,7 @@ cache:
     directories:
     - $HOME/AppData/Local/Temp/chocolatey
     - $HOME/AppData/Local/renv
+    - $TRAVIS_BUILD_DIR/renv/library
 
 install:
  - choco install -y r --version 3.6.2
