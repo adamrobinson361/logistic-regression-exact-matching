@@ -1,25 +1,25 @@
-os: windows
-language: shell
+language: r
+r: 
+  - 3.6.2
+  
+sudo: required
+
+branches:
+  only:
+  - master
 
 cache:
-    directories:
-    - $HOME/AppData/Local/Temp/chocolatey
-    - $HOME/AppData/Local/renv
-    - $TRAVIS_BUILD_DIR/renv/library
+  directories:
+  - $HOME/.local/share/renv
+  - $TRAVIS_BUILD_DIR/renv/library
 
 install:
- - choco install -y r --version 3.6.2
- - choco install -y rtools --version 3.5.0.4
- - choco install miktex --version=20.6.29.20200727
- - "export PATH=/c/Program\\ Files/MiKTeX/miktex/bin/x64:$PATH"
- - choco install -y pandoc
- - "export PATH=/c/Program\\ Files/R/R-3.6.2/bin/x64:/c/Rtools/bin:/c/RTools/mingw_64/bin:$PATH"
- - mkdir -p ${HOME}/Documents/R/win-library/3.6
- - export R_LIBS_USER=${HOME}/Documents/R/win-library/3.6
- - echo 'options(repos = c(CRAN = "https://cloud.r-project.org"))' > .Rprofile
- - Rscript -e 'Sys.getenv()'
- - Rscript -e 'install.packages("renv", type= "binary")'
- 
+  - Rscript -e "renv::restore()"
+  
+before_script:
+  - chmod +x ./_build.sh
+  - chmod +x ./_deploy.sh
+
 script:
- - Rscript -e 'renv::upgrade(); renv::restore(); source("run.R")'
- - ./_deploy.sh 
+  - ./_build.sh
+  - ./_deploy.sh 
