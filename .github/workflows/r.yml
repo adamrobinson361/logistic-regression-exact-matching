@@ -24,3 +24,4 @@ jobs:
       with:
         r-version: '3.6.2' # The R version to download (if necessary) and use.
     - run: Rscript -e 'renv::restore()'
+    - run: Rscript -e 'rmarkdown::render("report.Rmd", output_dir = "Outputs", output_file = "index.html")'
