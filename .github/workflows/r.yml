@@ -23,6 +23,9 @@ jobs:
     - uses: r-lib/actions/setup-r@v1
       with:
         r-version: '3.6.2' # The R version to download (if necessary) and use.
+    - uses: r-lib/actions/setup-pandoc@v1
+      with:
+        pandoc-version: '2.7.3' # The pandoc version to download (if necessary) and use.
     - run: Rscript -e 'renv::restore()'
     - run: Rscript -e 'rmarkdown::render("report.Rmd", output_dir = "Outputs", output_file = "index.html")'
     - name: 'Upload Artifact'
