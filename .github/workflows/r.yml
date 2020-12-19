@@ -26,9 +26,9 @@ jobs:
     - uses: r-lib/actions/setup-pandoc@v1
       with:
         pandoc-version: '2.7.3' # The pandoc version to download (if necessary) and use.
-    - run: Rscript -e 'renv::restore(); rmarkdown::render("report.Rmd", output_file = "index.html")'
+    - run: Rscript -e 'renv::activate() ; renv::upgrade(); renv::restore(); source("run.R")'
     - name: 'Upload Artifact'
       uses: actions/upload-artifact@v2
       with:
           name: my-artifact
-          path: index.html
+          path: Output/index.html
