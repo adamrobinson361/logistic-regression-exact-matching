@@ -26,7 +26,13 @@ jobs:
     - uses: r-lib/actions/setup-pandoc@v1
       with:
         pandoc-version: '2.7.3' # The pandoc version to download (if necessary) and use.
-    - run: Rscript -e 'renv::activate() ; renv::upgrade(); renv::restore(); source("run.R")'
+    - name: Install dependencies
+      run: |
+          renv::activate() 
+          renv::upgrade()
+          renv::restore()
+          source("run.R")
+      shell: Rscript {0}
     - name: 'Upload Artifact'
       uses: actions/upload-artifact@v2
       with:
